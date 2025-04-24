@@ -85,6 +85,20 @@ namespace Syddjurs_Item_API.Controllers
             return Ok(itemDto);
         }
 
+        [HttpGet("itemdelete")]
+        public async Task<IActionResult>DeletetItemById(int id)
+        {
+                      
+            var item = await _context.Items.FindAsync(id);
+            if (item != null)
+            {
+                 _context.Remove(item);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok();
+        }
+
 
         [HttpPost("uploadItemCategory")]
         public async Task<IActionResult> UploadItemCategory([FromBody] ItemCategoryDto categoryDto)
@@ -131,6 +145,36 @@ namespace Syddjurs_Item_API.Controllers
             }
 
             return Ok(returnList);
+        }
+
+        [HttpGet("categorybyid")]
+        public async Task<IActionResult> GetCategoryById(int id)
+        {
+            ItemCategoryDto categoryDto = null;
+
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
+            {
+                categoryDto = new ItemCategoryDto();
+                categoryDto.Id = id;
+                categoryDto.Category = category.Category;   
+            }
+
+            return Ok(categoryDto);
+        }
+
+        [HttpGet("itemdcategorydelete")]
+        public async Task<IActionResult> DeletetItemCategoryById(int id)
+        {
+
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
+            {
+                _context.Remove(category);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok();
         }
 
         private Item CopyItemDtoToItem(ItemFullDto itemDto, Item item)
