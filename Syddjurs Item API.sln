@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Syddjurs Item API", "Syddjurs Item API\Syddjurs Item API.csproj", "{5CBE8CE7-4514-4CA3-B926-43BC5D0BAAE0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CBE8CE7-4514-4CA3-B926-43BC5D0BAAE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CBE8CE7-4514-4CA3-B926-43BC5D0BAAE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CBE8CE7-4514-4CA3-B926-43BC5D0BAAE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CBE8CE7-4514-4CA3-B926-43BC5D0BAAE0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5ADE5F9D-05F9-435C-8987-6A82B4FE678F}
+	EndGlobalSection
+EndGlobal
