@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Models;
 
@@ -42,13 +43,47 @@ namespace Syddjurs_Item_API.Controllers
 
                 item = CopyItemDtoToItem(itemDto, null);
 
-                _context.Items.Update(item);                
+                _context.Items.Update(item);
             }
 
             await _context.SaveChangesAsync();
             return Ok();
         }
 
+        [HttpGet("itemsforlist")]
+        public async Task<IActionResult> GetItemsForList()
+        {
+            var itemList = _context.Items.ToList();
+
+            var returnList = new List<ItemListDto>();
+
+            foreach (var item in itemList)
+            {
+                var dto = new ItemListDto();
+                dto.Id = item.Id;
+                dto.Name = item.Name;
+                dto.Lendable = item.Lendable;
+
+                returnList.Add(dto);
+            }
+
+            return Ok(returnList);
+        }
+
+        [HttpGet("itembyid")]
+        public async Task<IActionResult> GetItemById(int id)
+        {
+            ItemFullDto itemDto = null;
+
+            var item = await _context.Items.FindAsync(id);
+            if (item != null)
+            {
+                itemDto = new ItemFullDto();
+                CopyItemToItemDto(itemDto, item);
+            }
+
+            return Ok(itemDto);
+        }
 
 
         [HttpPost("uploadItemCategory")]
@@ -109,21 +144,40 @@ namespace Syddjurs_Item_API.Controllers
                 item.Name = itemDto.Name;
                 item.Number = itemDto.Number;
                 item.Description = itemDto.Description;
-                if (itemDto.Category != null)
-                {
-                    var itemCategory = new ItemCategory();
-                    itemCategory.Id = itemDto.Category.Id;
-                    itemCategory.Category = itemDto.Category.Category;
-                    item.Categori = itemCategory;
-                }
+                item.CategoryId = itemDto.CategoryId;
 
                 item.Color = itemDto.Color;
                 item.Sex = itemDto.Sex;
                 item.Lendable = itemDto.Lendable;
                 item.Size = itemDto.Size;
-             
+
             }
+
+            return item;
+        }
+
+        private Item CopyItemToItemDto(ItemFullDto itemDto, Item item)
+        {
+
+
+            itemDto.Id = item.Id;
+            itemDto.Name = item.Name;
+            itemDto.Description = item.Description;
+
+            itemDto.Number = item.Number ?? 0;
+
+            //itemDto.CategoryId = item.CategoryId ?? 0;
            
+            item.Description = itemDto.Description;
+            item.CategoryId = itemDto.CategoryId;
+
+            item.Color = itemDto.Color;
+            item.Sex = itemDto.Sex;
+            item.Lendable = itemDto.Lendable;
+            item.Size = itemDto.Size;
+
+
+
             return item;
         }
     }

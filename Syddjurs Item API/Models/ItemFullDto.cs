@@ -31,7 +31,7 @@ namespace Syddjurs_Item_API.Models
         [JsonPropertyName("size")]
         public string Size { get; set; }
 
-        [JsonPropertyName("category")]
-        public ItemCategoryDto Category { get; set; }
+        [JsonPropertyName("categoryid")]
+        public int? CategoryId { get; set; }
     }
 }
