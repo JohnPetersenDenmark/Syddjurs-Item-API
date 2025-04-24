@@ -106,44 +106,24 @@ namespace Syddjurs_Item_API.Controllers
             }
 
             {
-                //stamp.FilePath = stampDto.FilePath;
-                //stamp.FileName = stampDto.FileName;
-                //stamp.UploadedAt = DateTime.Now;
-                ////FileData = memoryStream.ToArray();  // Store binary data here
-                //stamp.ContentType = stampDto.ContentType;
+                item.Name = itemDto.Name;
+                item.Number = itemDto.Number;
+                item.Description = itemDto.Description;
+                if (itemDto.Category != null)
+                {
+                    var itemCategory = new ItemCategory();
+                    itemCategory.Id = itemDto.Category.Id;
+                    itemCategory.Category = itemDto.Category.Category;
+                    item.Categori = itemCategory;
+                }
 
-                //stamp.StampName = stampDto.StampName;
-                //stamp.Country = stampDto.Country;
-                //stamp.YearOfIssue = stampDto.YearOfIssue;
-                //stamp.CatalogNumber = stampDto.CatalogNumber;
-
-
-                //stamp.Watermark = stampDto.Watermark;
-                //stamp.Condition = stampDto.Condition;
-                //stamp.Size = stampDto.Size;
-                //stamp.FaceValue = stampDto.FaceValue;
-
-
-                //stamp.Color = stampDto.Color;
-                //stamp.PrintMethod = stampDto.PrintMethod;
-                //stamp.Rarity = stampDto.Rarity;
-                //stamp.SpecialFeatures = stampDto.SpecialFeatures;
-
-
-                //stamp.StampSeries = stampDto.StampSeries;
-                //stamp.HistoricalSignificance = stampDto.HistoricalSignificance;
-                //stamp.Provenance = stampDto.Provenance;
-                //stamp.AdditionalNotes = stampDto.AdditionalNotes;
-
-                //if (stampDto.StampCategory != null)
-                //{
-                //    var stampCategory = new StampCategory();
-                //    stampCategory.Id = stampDto.StampCategory.Id;
-                //    stampCategory.Category = stampDto.StampCategory.Category;
-                //    stamp.StampCategory = stampCategory;
-                //}
+                item.Color = itemDto.Color;
+                item.Sex = itemDto.Sex;
+                item.Lendable = itemDto.Lendable;
+                item.Size = itemDto.Size;
+             
             }
-           ;
+           
             return item;
         }
     }
