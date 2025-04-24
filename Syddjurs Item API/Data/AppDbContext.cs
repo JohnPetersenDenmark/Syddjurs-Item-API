@@ -10,6 +10,7 @@ namespace Syddjurs_Item_API.Data
 
         }
 
+        public DbSet<Item> Items { get; set; }
         public DbSet<ItemCategory> Categories { get; set; }
     }
 }
