@@ -10,7 +10,7 @@ namespace Syddjurs_Item_API.Models
 
         public string? Color { get; set; }
 
-        public string? Description { get; set; }
+        public string? Description { get; set; } 
 
         public string? Sex { get; set; }
 
