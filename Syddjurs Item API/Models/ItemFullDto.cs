@@ -33,5 +33,8 @@ namespace Syddjurs_Item_API.Models
 
         [JsonPropertyName("categoryid")]
         public int? CategoryId { get; set; }
+
+        [JsonPropertyName("categorytext")]
+        public string? CategoryText { get; set; }
     }
 }

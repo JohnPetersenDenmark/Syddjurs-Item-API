@@ -21,5 +21,6 @@ namespace Syddjurs_Item_API.Models
         public string? Size { get; set; }  
         
         public int? CategoryId { get; set; }
+        public string? CategoryText { get; set; }
     }
 }

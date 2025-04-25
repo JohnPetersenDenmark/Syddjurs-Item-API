@@ -189,7 +189,7 @@ namespace Syddjurs_Item_API.Controllers
                 item.Number = itemDto.Number;
                 item.Description = itemDto.Description;
                 item.CategoryId = itemDto.CategoryId;
-
+                item.CategoryText = itemDto.CategoryText;
                 item.Color = itemDto.Color;
                 item.Sex = itemDto.Sex;
                 item.Lendable = itemDto.Lendable;
@@ -208,17 +208,19 @@ namespace Syddjurs_Item_API.Controllers
             itemDto.Name = item.Name;
             itemDto.Description = item.Description;
 
-            itemDto.Number = item.Number ?? 0;
+            itemDto.Number = item.Number is null ? 0 : (int)item.Number;
 
-            //itemDto.CategoryId = item.CategoryId ?? 0;
-           
-            item.Description = itemDto.Description;
-            item.CategoryId = itemDto.CategoryId;
+             itemDto.Lendable = item.Lendable is null ? false : (bool)item.Lendable; ;
 
-            item.Color = itemDto.Color;
-            item.Sex = itemDto.Sex;
-            item.Lendable = itemDto.Lendable;
-            item.Size = itemDto.Size;
+
+            itemDto.Description = item.Description;
+            itemDto.CategoryId  = item.CategoryId;
+            itemDto.CategoryText = item.CategoryText;
+
+            itemDto.Color = item.Color ;
+            itemDto.Sex = item.Sex;
+          
+            itemDto.Size = item.Size ;
 
 
 
