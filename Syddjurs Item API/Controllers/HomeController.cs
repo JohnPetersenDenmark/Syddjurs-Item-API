@@ -41,9 +41,9 @@ namespace Syddjurs_Item_API.Controllers
                 if (existingItem == null)
                     return NotFound($"Stamp with ID {itemDto.Id} not found.");
 
-                item = CopyItemDtoToItem(itemDto, null);
+                existingItem = CopyItemDtoToItem(itemDto, existingItem);
 
-                _context.Items.Update(item);
+                _context.Items.Update(existingItem);
             }
 
             await _context.SaveChangesAsync();

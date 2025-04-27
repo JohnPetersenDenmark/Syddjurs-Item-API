@@ -23,7 +23,7 @@ namespace Syddjurs_Item_API.Models
         public string Sex { get; set; }
 
         [JsonPropertyName("number")]
-        public int Number { get; set; }
+        public int? Number { get; set; }
 
         [JsonPropertyName("lendable")]
         public bool Lendable { get; set; }
