@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Syddjurs.Models;
 using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Models;
 
@@ -63,7 +64,32 @@ namespace Syddjurs_Item_API.Controllers
                 dto.Id = item.Id;
                 dto.Name = item.Name;
                 dto.Lendable = item.Lendable;
+                dto.Number = item.Number;   
 
+                returnList.Add(dto);
+            }
+
+            return Ok(returnList);
+        }
+
+
+        [HttpGet("loansforlist")]
+        public async Task<IActionResult> GetLoanForList(string userName)
+        {
+            var loanList = _context.Loans.ToList();
+
+            var returnList = new List<LoanDto>();
+
+            LoanDto dto = null;
+            foreach (var item in loanList)
+            {
+                if (item.Lender == userName)
+                {
+                     dto = new LoanDto();
+                    dto.Id = item.Id;
+                    dto.Lender = item.Lender;
+                    dto.LoanDate = item.LoanDate;
+                }                          
                 returnList.Add(dto);
             }
 
@@ -122,6 +148,67 @@ namespace Syddjurs_Item_API.Controllers
                 existingCategory.Category = categoryDto.Category;
 
                 _context.Categories.Update(existingCategory);
+            }
+
+            await _context.SaveChangesAsync(); // ✅ Save here to get the generated Item category Id     
+            return Ok();
+        }
+
+        [HttpPost("uploadloan")]
+        public async Task<IActionResult> UploadLoan([FromBody] LoanDto loanDto)
+        {
+            if (loanDto.Id == 0)
+            {
+                var loan = new Loan();
+                loan.LoanDate = loanDto.LoanDate;
+                loan.Lender = loanDto.Lender;                             
+                await _context.Loans.AddAsync(loan);
+                await _context.SaveChangesAsync();
+
+                foreach (var loanItemLineDto in loanDto.LoanItemLines)
+                {
+                    var loanItemLine = new LoanItemLine();
+                    loanItemLine.LoanId = loan.Id;
+                    loanItemLine.ItemId = loanItemLineDto.ItemId;
+                    loanItemLine.Note = loanItemLineDto.Note;
+                    loanItemLine.Number = loanItemLineDto.Number;   
+                    _context.LoanItemLines.Add(loanItemLine);   
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // 🔄 Updating an existing loan
+                var existingLoan = await _context.Loans.FindAsync(loanDto.Id);
+                if (existingLoan == null)
+                    return NotFound($"Item with ID {loanDto.Id} not found.");
+
+                existingLoan.LoanDate = loanDto.LoanDate;
+                existingLoan.Lender = loanDto.Lender;
+                _context.Loans.Update(existingLoan);
+
+                var loanLines = _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id);
+
+                foreach (var loanLine in loanLines)
+                {
+                    _context.Remove(loanLine);
+                }
+
+                await _context.SaveChangesAsync();
+
+                foreach (var loanItemLineDto in loanDto.LoanItemLines)
+                {
+                    var loanItemLine = new LoanItemLine();
+                    loanItemLine.LoanId = existingLoan.Id;
+                    loanItemLine.ItemId = loanItemLineDto.ItemId;
+                    loanItemLine.Note = loanItemLineDto.Note;
+                    loanItemLine.Number = loanItemLineDto.Number;
+                    _context.LoanItemLines.Add(loanItemLine);
+                }
+
+                await _context.SaveChangesAsync();
+
             }
 
             await _context.SaveChangesAsync(); // ✅ Save here to get the generated Item category Id     

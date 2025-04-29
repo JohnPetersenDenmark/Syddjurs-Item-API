@@ -12,5 +12,7 @@ namespace Syddjurs_Item_API.Data
 
         public DbSet<Item> Items { get; set; }
         public DbSet<ItemCategory> Categories { get; set; }
+        public DbSet<Loan> Loans { get; set; }
+        public DbSet<LoanItemLine> LoanItemLines { get; set; }
     }
 }
