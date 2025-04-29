@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Syddjurs.Models;
@@ -7,7 +8,7 @@ using Syddjurs_Item_API.Models;
 
 namespace Syddjurs_Item_API.Controllers
 {
-
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class HomeController : Controller
