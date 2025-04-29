@@ -10,18 +10,21 @@ namespace Syddjurs.Models
     public class LoanItemLinesUploadDto
     {
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         [JsonPropertyName("itemId")]
-        public int ItemId { get; set; }
+        public int? ItemId { get; set; }
+
+        [JsonPropertyName("itemName")]
+        public string? ItemName { get; set; }
 
         [JsonPropertyName("loanId")]
-        public int LoanId { get; set; }
+        public int? LoanId { get; set; }
 
         [JsonPropertyName("note")]
         public string Note { get; set; }
 
         [JsonPropertyName("number")]
-        public int Number { get; set; }
+        public int? Number { get; set; }
     }
 }

@@ -20,7 +20,7 @@ namespace Syddjurs_Item_API.Models
         public string LoanDate { get; set; }
 
         [JsonPropertyName("loanitemlines")]
-        public List<LoanItemLinesUploadDto> LoanItemLines { get; set; }
+        public List<LoanItemLinesUploadDto>? LoanItemLines { get; set; }
     }
 }
 

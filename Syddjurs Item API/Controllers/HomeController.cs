@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Syddjurs.Models;
 using Syddjurs_Item_API.Data;
@@ -89,12 +90,47 @@ namespace Syddjurs_Item_API.Controllers
                     dto.Id = item.Id;
                     dto.Lender = item.Lender;
                     dto.LoanDate = item.LoanDate;
+                    returnList.Add(dto);
                 }                          
+              
+            }
+
+            return Ok(returnList);
+        }
+
+        [HttpGet("loanitemlines")]
+        public async Task<IActionResult> GetLoanItemLines(int loanId)
+        {
+            var returnList = new List<LoanItemLinesUploadDto>();
+
+            // Materialize query to list before looping
+            var loanLines = await _context.LoanItemLines
+                                          .Where(p => p.LoanId == loanId)
+                                          .ToListAsync();
+
+            foreach (var loanLine in loanLines)
+            {
+                var dto = new LoanItemLinesUploadDto
+                {
+                    Id = loanLine.Id,
+                    LoanId = loanLine.LoanId,
+                    Note = loanLine.Note,
+                    Number = loanLine.Number,
+                    ItemId = loanLine.ItemId
+                };
+
+                var item = await _context.Items.FindAsync(loanLine.ItemId);
+                if (item != null)
+                {
+                    dto.ItemName = item.Name;
+                }
+
                 returnList.Add(dto);
             }
 
             return Ok(returnList);
         }
+
 
         [HttpGet("itembyid")]
         public async Task<IActionResult> GetItemById(int id)
@@ -169,9 +205,9 @@ namespace Syddjurs_Item_API.Controllers
                 {
                     var loanItemLine = new LoanItemLine();
                     loanItemLine.LoanId = loan.Id;
-                    loanItemLine.ItemId = loanItemLineDto.ItemId;
+                    loanItemLine.ItemId = (int)loanItemLineDto.ItemId;
                     loanItemLine.Note = loanItemLineDto.Note;
-                    loanItemLine.Number = loanItemLineDto.Number;   
+                    loanItemLine.Number = (int)loanItemLineDto.Number;   
                     _context.LoanItemLines.Add(loanItemLine);   
                 }
 
@@ -201,9 +237,9 @@ namespace Syddjurs_Item_API.Controllers
                 {
                     var loanItemLine = new LoanItemLine();
                     loanItemLine.LoanId = existingLoan.Id;
-                    loanItemLine.ItemId = loanItemLineDto.ItemId;
+                    loanItemLine.ItemId = (int)loanItemLineDto.ItemId;
                     loanItemLine.Note = loanItemLineDto.Note;
-                    loanItemLine.Number = loanItemLineDto.Number;
+                    loanItemLine.Number = (int)loanItemLineDto.Number;
                     _context.LoanItemLines.Add(loanItemLine);
                 }
 
