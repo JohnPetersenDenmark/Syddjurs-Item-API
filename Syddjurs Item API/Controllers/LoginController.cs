@@ -41,7 +41,7 @@ namespace Syddjurs_Item_API.Controllers
 
             if (user == null)
             {
-                return Unauthorized("Invalid username or password");
+                return Unauthorized("Ugyldig brugernavn eller kodeord");
             }
 
             var signInResult = await _signInManager.PasswordSignInAsync(user, loginDto.Password, false, false);
