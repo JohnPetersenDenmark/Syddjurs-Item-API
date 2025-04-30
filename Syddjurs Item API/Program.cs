@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
+    .AddErrorDescriber<DanishIdentityErrorDescriber>() // Add custom describer
     .AddDefaultTokenProviders();
 
 // 2. Configure JWT Authentication

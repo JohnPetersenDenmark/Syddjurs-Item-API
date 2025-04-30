@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Models;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -59,7 +62,7 @@ namespace Syddjurs_Item_API.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
 
             var user = new ApplicationUser
             {
@@ -71,11 +74,12 @@ namespace Syddjurs_Item_API.Controllers
 
             if (!result.Succeeded)
             {
-                var errors = result.Errors.Select(e => e.Description);
-                return BadRequest(new { Errors = errors });
+                 var errors = result.Errors.Select(e => e.Description).ToList();
+            
+                return BadRequest(new { Errors = errors }); // ✅ Proper 400 Bad Request
             }
 
-            // Optional: assign a default role
+            // Optional: Assign default role
             // await _userManager.AddToRoleAsync(user, "User");
 
             return Ok(new { Message = "User registered successfully" });
@@ -103,7 +107,7 @@ namespace Syddjurs_Item_API.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-    }
+        }     
+   }
 }
 
