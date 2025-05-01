@@ -221,7 +221,7 @@ namespace Syddjurs_Item_API.Controllers
                     loanItemLine.Number = (int)loanItemLineDto.Number;
                     var item = await _context.Items.FindAsync((int)loanItemLine.ItemId);
 
-                    await AdjustNumberOnItem(item, loanItemLineDto.Number, true);
+                    await AdjustNumberOnItem(item, loanItemLineDto.Number, false);
                     _context.LoanItemLines.Add(loanItemLine);   
                 }
 
@@ -245,7 +245,7 @@ namespace Syddjurs_Item_API.Controllers
                 foreach (var loanLine in loanLines)
                 {
                     var item = await _context.Items.FindAsync((int)loanLine.ItemId);
-                    await AdjustNumberOnItem(item, loanLine.Number, false);
+                    await AdjustNumberOnItem(item, loanLine.Number, true);
                     _context.Remove(loanLine);
                 }
 
@@ -263,7 +263,7 @@ namespace Syddjurs_Item_API.Controllers
                     };
 
                     var item = await _context.Items.FindAsync((int)loanItemLineDto.ItemId);
-                    await AdjustNumberOnItem(item, loanItemLineDto.Number, true);
+                    await AdjustNumberOnItem(item, loanItemLineDto.Number, false);
                     _context.LoanItemLines.Add(loanItemLine);
                 }
 
