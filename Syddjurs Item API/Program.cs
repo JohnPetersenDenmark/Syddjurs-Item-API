@@ -5,7 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Syddjurs_Item_API.Data; // Your AppDbContext namespace
 using Syddjurs_Item_API.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer; // Your ApplicationUser namespace
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore.Internal;
+using Syddjurs_Item_API.Controllers;
+using Syddjurs_Item_API.Services;
+using Syddjurs_Item_API; // Your ApplicationUser namespace
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,18 +18,29 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+
 // 1. Configure EF Core with Identity
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Correctly scoped DbContextFactory registration
+//builder.Services.AddDbContextFactory<AppDbContext>(options =>
+ //   options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 2. Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddErrorDescriber<DanishIdentityErrorDescriber>() // Add custom describer
     .AddDefaultTokenProviders();
 
-// 2. Configure JWT Authentication
+// 3. Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"];
+
+
 
 builder.Services.AddAuthentication(options =>
 {

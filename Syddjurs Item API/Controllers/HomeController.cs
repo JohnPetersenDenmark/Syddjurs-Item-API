@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Syddjurs.Models;
 using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Models;
+using Syddjurs_Item_API.Services;
 
 namespace Syddjurs_Item_API.Controllers
 {
@@ -15,9 +16,12 @@ namespace Syddjurs_Item_API.Controllers
     {
         private readonly AppDbContext _context;
 
-        public HomeController(AppDbContext context)
+      
+        private readonly IEmailService _emailService;
+        public HomeController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;            
         }
 
 
@@ -36,6 +40,12 @@ namespace Syddjurs_Item_API.Controllers
 
                 await _context.Items.AddAsync(item);
                 await _context.SaveChangesAsync(); // ✅ Save here to get the generated Stamp.Id             
+
+                await _emailService.SendEmailAsync(
+                toEmail: "johnpetersen1959@gmail.com",
+                subject: "Test Email",
+                message: "<h2>Hello from Syddjurs API!</h2>"
+            );
             }
             else
             {
@@ -208,7 +218,10 @@ namespace Syddjurs_Item_API.Controllers
                     loanItemLine.LoanId = loan.Id;
                     loanItemLine.ItemId = (int)loanItemLineDto.ItemId;
                     loanItemLine.Note = loanItemLineDto.Note;
-                    loanItemLine.Number = (int)loanItemLineDto.Number;   
+                    loanItemLine.Number = (int)loanItemLineDto.Number;
+                    var item = await _context.Items.FindAsync((int)loanItemLine.ItemId);
+
+                    await AdjustNumberOnItem(item, loanItemLineDto.Number, true);
                     _context.LoanItemLines.Add(loanItemLine);   
                 }
 
@@ -224,23 +237,33 @@ namespace Syddjurs_Item_API.Controllers
                 existingLoan.LoanDate = loanDto.LoanDate;
                 existingLoan.Lender = loanDto.Lender;
                 _context.Loans.Update(existingLoan);
+                await _context.SaveChangesAsync();
 
-                var loanLines = _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id);
+              
+                var loanLines =  _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id).ToList();
 
                 foreach (var loanLine in loanLines)
                 {
+                    var item = await _context.Items.FindAsync((int)loanLine.ItemId);
+                    await AdjustNumberOnItem(item, loanLine.Number, false);
                     _context.Remove(loanLine);
                 }
 
                 await _context.SaveChangesAsync();
 
+
                 foreach (var loanItemLineDto in loanDto.LoanItemLines)
                 {
-                    var loanItemLine = new LoanItemLine();
-                    loanItemLine.LoanId = existingLoan.Id;
-                    loanItemLine.ItemId = (int)loanItemLineDto.ItemId;
-                    loanItemLine.Note = loanItemLineDto.Note;
-                    loanItemLine.Number = (int)loanItemLineDto.Number;
+                    var loanItemLine = new LoanItemLine
+                    {
+                        LoanId = existingLoan.Id,
+                        ItemId = (int)loanItemLineDto.ItemId,
+                        Note = loanItemLineDto.Note,
+                        Number = (int)loanItemLineDto.Number
+                    };
+
+                    var item = await _context.Items.FindAsync((int)loanItemLineDto.ItemId);
+                    await AdjustNumberOnItem(item, loanItemLineDto.Number, true);
                     _context.LoanItemLines.Add(loanItemLine);
                 }
 
@@ -250,6 +273,26 @@ namespace Syddjurs_Item_API.Controllers
 
             await _context.SaveChangesAsync(); // ✅ Save here to get the generated Item category Id     
             return Ok();
+        }
+
+        private async Task<Item> AdjustNumberOnItem(Item item, int? loanItemNumber, bool addFlag)
+        {
+            // await using var separateContext = _contextFactory.CreateDbContext();
+            //var item = await separateContext.Items.FindAsync(itemId);
+
+           
+
+            if (item == null)
+                return null;
+
+            if (addFlag)
+                item.Number += loanItemNumber;
+            else
+                item.Number -= loanItemNumber;
+
+            // await separateContext.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            return item;
         }
 
         [HttpGet("itemCategories")]
