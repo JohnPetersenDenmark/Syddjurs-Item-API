@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Syddjurs.Models;
+using Syddjurs.Models;
 using Syddjurs_Item_API.Data;
+using Syddjurs_Item_API.Interfaces;
 using Syddjurs_Item_API.Models;
 using Syddjurs_Item_API.Services;
 using System.Security.Claims;
@@ -16,22 +18,29 @@ namespace Syddjurs_Item_API.Controllers
     public class HomeController : Controller
     {
         private readonly AppDbContext _context;
-
-      
+        private readonly IUserContext _userContext;
         private readonly IEmailService _emailService;
-        public HomeController(AppDbContext context, IEmailService emailService)
+
+
+        public HomeController(AppDbContext context, IEmailService emailService, IUserContext userContext)
         {
             _context = context;
-            _emailService = emailService;            
+            _emailService = emailService;
+            _userContext = userContext;
         }
 
 
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
         [HttpPost("uploaditem")]
+       
         public async Task<IActionResult> UploadItem([FromBody] ItemFullDto itemDto)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var userName = User.Identity?.Name;
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            //var userName = User.Identity?.Name;
+
+            var name = _userContext.UserName;
+            var id = _userContext.UserId; 
 
             if (itemDto == null)
                 return BadRequest("No item data received.");

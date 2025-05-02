@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore.Internal;
 using Syddjurs_Item_API.Controllers;
 using Syddjurs_Item_API.Services;
-using Syddjurs_Item_API; // Your ApplicationUser namespace
+using Syddjurs_Item_API;
+using Syddjurs_Item_API.Interfaces; // Your ApplicationUser namespace
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +61,9 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
+
+builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<ResolveUserClaimsFilter>();
 
 builder.Services.AddAuthorization();
 

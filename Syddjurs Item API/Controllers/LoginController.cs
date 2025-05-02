@@ -87,21 +87,16 @@ namespace Syddjurs_Item_API.Controllers
 
         private string GenerateJwtToken(ApplicationUser user)
         {
-            //var claims = new[]
-            //{
-            //    new Claim(ClaimTypes.Name, user.UserName),
-            //    new Claim(ClaimTypes.NameIdentifier, user.Id),
-            //    // You can also include roles, if needed
-            //    new Claim(ClaimTypes.Role, "User") // Example role, can be dynamic based on user roles
-            //};
-
             var claims = new[]
-{
-    new Claim("sub", user.Id),
-    new Claim("name", user.UserName),
-    new Claim("role", "User")
-};
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                 new Claim(ClaimTypes.Email, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                // You can also include roles, if needed
+                new Claim(ClaimTypes.Role, "User") // Example role, can be dynamic based on user roles
+            };
 
+          
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
