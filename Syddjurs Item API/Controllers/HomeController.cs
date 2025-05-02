@@ -6,6 +6,7 @@ using Syddjurs.Models;
 using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Models;
 using Syddjurs_Item_API.Services;
+using System.Security.Claims;
 
 namespace Syddjurs_Item_API.Controllers
 {
@@ -28,6 +29,10 @@ namespace Syddjurs_Item_API.Controllers
         [HttpPost("uploaditem")]
         public async Task<IActionResult> UploadItem([FromBody] ItemFullDto itemDto)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var userName = User.Identity?.Name;
+
             if (itemDto == null)
                 return BadRequest("No item data received.");
 
