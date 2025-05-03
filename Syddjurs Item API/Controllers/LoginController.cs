@@ -53,7 +53,7 @@ namespace Syddjurs_Item_API.Controllers
                 return Unauthorized("Invalid username or password");
             }
 
-            var token = GenerateJwtToken(user);
+            var token = await GenerateJwtToken(user);
 
             return Ok(new { Token = token });
         }
@@ -87,18 +87,32 @@ namespace Syddjurs_Item_API.Controllers
             return Ok(new { Message = "User registered successfully" });
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtToken(ApplicationUser user)
         {
-            var claims = new[]
+
+            var listclaim = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName),
                  new Claim(ClaimTypes.Email, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                // You can also include roles, if needed
-                new Claim(ClaimTypes.Role, "User") // Example role, can be dynamic based on user roles
             };
 
-          
+            var currentUserRoles = await _userManager.GetRolesAsync(user);
+            foreach (var currentUserRole in currentUserRoles)
+            {
+                var claim = new Claim(ClaimTypes.Role, currentUserRole);
+                listclaim.Add(claim);
+            }
+
+            var claims = listclaim.ToArray();
+
+            //var claims = new[]
+            //{
+            //  new Claim(ClaimTypes.Name, user.UserName),
+            //     new Claim(ClaimTypes.Email, user.UserName),
+            //    new Claim(ClaimTypes.NameIdentifier, user.Id),
+            //    };
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

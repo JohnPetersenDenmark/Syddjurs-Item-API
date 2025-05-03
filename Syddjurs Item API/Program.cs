@@ -69,6 +69,11 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    await SystemAdministratorSetup.EnsureAdminUserAsync(scope.ServiceProvider);
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -85,3 +90,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
