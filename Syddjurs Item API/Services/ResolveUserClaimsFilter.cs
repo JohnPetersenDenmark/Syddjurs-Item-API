@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Syddjurs_Item_API.Interfaces;
+using Syddjurs_Item_API.Models;
 using System.Security.Claims;
 
 namespace Syddjurs_Item_API.Services
@@ -7,21 +9,31 @@ namespace Syddjurs_Item_API.Services
     public class ResolveUserClaimsFilter : IActionFilter
     {
         private readonly IUserContext _userContext;
+        private UserManager<ApplicationUser> _userManager;
 
-        public ResolveUserClaimsFilter(IUserContext userContext)
+        public ResolveUserClaimsFilter(IUserContext userContext, UserManager<ApplicationUser> userManager)
         {
             _userContext = userContext;
+            _userManager = userManager;
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            var user = context.HttpContext.User;
+            var httpUser = context.HttpContext.User;
 
-            if (user.Identity?.IsAuthenticated == true)
+            if (httpUser.Identity?.IsAuthenticated == true)
             {              
-                _userContext.UserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                _userContext.Email = user.FindFirst(ClaimTypes.Email)?.Value;
-                _userContext.UserName = user.FindFirst(ClaimTypes.Name)?.Value;
+                _userContext.UserId = httpUser.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                var applicationUser =  _userManager.FindByIdAsync(_userContext.UserId).Result;
+                if ( (applicationUser != null))
+                {
+                    _userContext.Email = applicationUser.Email;
+                    _userContext.UserId = applicationUser.Id;
+                    //_userContext.Email = applicationUser.FindFirst(ClaimTypes.Email)?.Value;
+                    //_userContext.UserName = user.FindFirst(ClaimTypes.Name)?.Value;
+                }
+               
             }
         }
 

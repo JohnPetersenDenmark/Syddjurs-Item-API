@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,7 @@ using Syddjurs_Item_API.Interfaces;
 using Syddjurs_Item_API.Models;
 using Syddjurs_Item_API.Services;
 using System.Security.Claims;
+using System.Threading;
 
 namespace Syddjurs_Item_API.Controllers
 {
@@ -30,17 +32,13 @@ namespace Syddjurs_Item_API.Controllers
         }
 
 
-        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+
         [HttpPost("uploaditem")]
-       
+
         public async Task<IActionResult> UploadItem([FromBody] ItemFullDto itemDto)
         {
-            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            //var userName = User.Identity?.Name;
 
-            var name = _userContext.UserName;
-            var id = _userContext.UserId; 
+
 
             if (itemDto == null)
                 return BadRequest("No item data received.");
@@ -53,13 +51,7 @@ namespace Syddjurs_Item_API.Controllers
                 item = CopyItemDtoToItem(itemDto, null);
 
                 await _context.Items.AddAsync(item);
-                await _context.SaveChangesAsync(); // ✅ Save here to get the generated Stamp.Id             
-
-                await _emailService.SendEmailAsync(
-                toEmail: "johnpetersen1959@gmail.com",
-                subject: "Test Email",
-                message: "<h2>Hello from Syddjurs API!</h2>"
-            );
+                await _context.SaveChangesAsync(); // ✅ Save here to get the generated Item id                                        
             }
             else
             {
@@ -90,7 +82,7 @@ namespace Syddjurs_Item_API.Controllers
                 dto.Id = item.Id;
                 dto.Name = item.Name;
                 dto.Lendable = item.Lendable;
-                dto.Number = item.Number;   
+                dto.Number = item.Number;
 
                 returnList.Add(dto);
             }
@@ -111,13 +103,13 @@ namespace Syddjurs_Item_API.Controllers
             {
                 if (item.Lender == userName)
                 {
-                     dto = new LoanDto();
+                    dto = new LoanDto();
                     dto.Id = item.Id;
                     dto.Lender = item.Lender;
                     dto.LoanDate = item.LoanDate;
                     returnList.Add(dto);
-                }                          
-              
+                }
+
             }
 
             return Ok(returnList);
@@ -173,13 +165,13 @@ namespace Syddjurs_Item_API.Controllers
         }
 
         [HttpGet("itemdelete")]
-        public async Task<IActionResult>DeletetItemById(int id)
+        public async Task<IActionResult> DeletetItemById(int id)
         {
-                      
+
             var item = await _context.Items.FindAsync(id);
             if (item != null)
             {
-                 _context.Remove(item);
+                _context.Remove(item);
                 await _context.SaveChangesAsync();
             }
 
@@ -215,14 +207,18 @@ namespace Syddjurs_Item_API.Controllers
             return Ok();
         }
 
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
         [HttpPost("uploadloan")]
         public async Task<IActionResult> UploadLoan([FromBody] LoanDto loanDto)
         {
+            var userEmail = _userContext.Email;
+            string emailBody = string.Empty;
+
             if (loanDto.Id == 0)
             {
                 var loan = new Loan();
                 loan.LoanDate = loanDto.LoanDate;
-                loan.Lender = loanDto.Lender;                             
+                loan.Lender = loanDto.Lender;
                 await _context.Loans.AddAsync(loan);
                 await _context.SaveChangesAsync();
 
@@ -236,10 +232,18 @@ namespace Syddjurs_Item_API.Controllers
                     var item = await _context.Items.FindAsync((int)loanItemLine.ItemId);
 
                     await AdjustNumberOnItem(item, loanItemLineDto.Number, false);
-                    _context.LoanItemLines.Add(loanItemLine);   
+                    _context.LoanItemLines.Add(loanItemLine);
                 }
 
                 await _context.SaveChangesAsync();
+
+
+                emailBody = AddNewLoanEmailHeader(loan, emailBody);
+                emailBody =  await AddLoanInfo(loan, emailBody);
+              
+                SendLoanInfoEmail(userEmail, emailBody);
+
+
             }
             else
             {
@@ -253,8 +257,10 @@ namespace Syddjurs_Item_API.Controllers
                 _context.Loans.Update(existingLoan);
                 await _context.SaveChangesAsync();
 
-              
-                var loanLines =  _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id).ToList();
+                emailBody = AddEditedLoanEmailHeader(existingLoan, emailBody);
+                emailBody = await AddLoanInfo(existingLoan, emailBody);
+
+                var loanLines = _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id).ToList();
 
                 foreach (var loanLine in loanLines)
                 {
@@ -264,7 +270,6 @@ namespace Syddjurs_Item_API.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-
 
                 foreach (var loanItemLineDto in loanDto.LoanItemLines)
                 {
@@ -283,6 +288,8 @@ namespace Syddjurs_Item_API.Controllers
 
                 await _context.SaveChangesAsync();
 
+                emailBody = await AddLoanInfo(existingLoan, emailBody);
+                SendLoanInfoEmail(userEmail, emailBody);
             }
 
             await _context.SaveChangesAsync(); // ✅ Save here to get the generated Item category Id     
@@ -294,7 +301,7 @@ namespace Syddjurs_Item_API.Controllers
             // await using var separateContext = _contextFactory.CreateDbContext();
             //var item = await separateContext.Items.FindAsync(itemId);
 
-           
+
 
             if (item == null)
                 return null;
@@ -338,7 +345,7 @@ namespace Syddjurs_Item_API.Controllers
             {
                 categoryDto = new ItemCategoryDto();
                 categoryDto.Id = id;
-                categoryDto.Category = category.Category;   
+                categoryDto.Category = category.Category;
             }
 
             return Ok(categoryDto);
@@ -391,24 +398,90 @@ namespace Syddjurs_Item_API.Controllers
 
             itemDto.Number = item.Number is null ? 0 : (int)item.Number;
 
-             itemDto.Lendable = item.Lendable is null ? false : (bool)item.Lendable; ;
+            itemDto.Lendable = item.Lendable is null ? false : (bool)item.Lendable; ;
 
 
             itemDto.Description = item.Description;
-            itemDto.CategoryId  = item.CategoryId;
+            itemDto.CategoryId = item.CategoryId;
             itemDto.CategoryText = item.CategoryText;
 
-            itemDto.Color = item.Color ;
+            itemDto.Color = item.Color;
             itemDto.Sex = item.Sex;
-          
-            itemDto.Size = item.Size ;
+
+            itemDto.Size = item.Size;
 
 
 
             return item;
         }
-    }
 
+        private async Task SendNewLoanEmail(String SendTo, Loan loan)
+        {
+            var body = "<h2>Hej " + _userContext.UserName + "</h2>";
+            body += "<h2>Du har den " + loan.LoanDate + " lånt følgende:</h2>";
+
+            body += AddLoanInfo(loan, body);
+
+            await _emailService.SendEmailAsync(
+                toEmail: SendTo,
+                subject: "Nyt lån",
+                 body);
+
+
+        }
+
+        private string AddNewLoanEmailHeader(Loan loan, string body)
+        {
+            body = "<h2>Hej " + _userContext.UserName + "</h2>";
+            body += "<h2>Du har den " + loan.LoanDate + " lånt følgende:</h2>";
+            return body;
+        }
+
+        private string AddEditedLoanEmailHeader(Loan loan, string body)
+        {
+            body += "<h2>Du har ændret dit lån den " + loan.LoanDate + " til følgende:</h2>";
+            return body;
+        }
+
+        private async Task SendLoanInfoEmail(String SendTo, string body)
+        {
+
+            await _emailService.SendEmailAsync(
+                toEmail: SendTo,
+                subject: "Nyt lån",
+                 body);
+        }
+
+
+        private async Task<string> AddLoanInfo(Loan loan, string emailBody)
+        {
+            var loanLines = _context.LoanItemLines.Where(p => p.LoanId == loan.Id).ToList();
+
+            var body = emailBody;
+            body += "<table width=\"50%\" border=\"1\" cellpadding=\"5\" cellspacing=\"0\" style=\"border-collapse: collapse;\">";
+
+            body += "<tr>";
+            body += "<th style=\"text-align: left;\" width=\"30%\">Antal</th>";
+            body += "<th style=\"text-align: left;\" width=\"30%\">Beskrivelse</th>";
+            body += "<th style=\"text-align: left;\" width=\"30%\">Notat</th>";
+            body += "</tr>";
+
+            foreach (var loanLine in loanLines)
+            {
+                var item = await _context.Items.FindAsync((int)loanLine.ItemId);
+
+                body += "<tr>";
+                body += "<td>" + loanLine.Number + "</td>";
+                body += "<td>" + System.Net.WebUtility.HtmlEncode(item?.Name ?? "Ukendt") + "</td>";
+                body += "<td>" + System.Net.WebUtility.HtmlEncode(loanLine.Note ?? "") + "</td>";
+                body += "</tr>";
+            }
+
+            body += "</table>";
+            return body;
+
+        }
+    }
 
 }
 
