@@ -9,6 +9,7 @@ using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Interfaces;
 using Syddjurs_Item_API.Models;
 using Syddjurs_Item_API.Services;
+using System.Globalization;
 using System.Security.Claims;
 using System.Threading;
 
@@ -257,7 +258,7 @@ namespace Syddjurs_Item_API.Controllers
                 _context.Loans.Update(existingLoan);
                 await _context.SaveChangesAsync();
 
-                emailBody = AddEditedLoanEmailHeader(existingLoan, emailBody);
+                emailBody = AddEditedLoanEmailHeaderPart1(existingLoan, emailBody);
                 emailBody = await AddLoanInfo(existingLoan, emailBody);
 
                 var loanLines = _context.LoanItemLines.Where(p => p.LoanId == existingLoan.Id).ToList();
@@ -288,6 +289,8 @@ namespace Syddjurs_Item_API.Controllers
 
                 await _context.SaveChangesAsync();
 
+               // 
+                emailBody =  AddEditedLoanEmailHeaderPart2(existingLoan, emailBody);
                 emailBody = await AddLoanInfo(existingLoan, emailBody);
                 SendLoanInfoEmail(userEmail, emailBody);
             }
@@ -437,9 +440,17 @@ namespace Syddjurs_Item_API.Controllers
             return body;
         }
 
-        private string AddEditedLoanEmailHeader(Loan loan, string body)
+        private string AddEditedLoanEmailHeaderPart1(Loan loan, string body)
         {
-            body += "<h2>Du har ændret dit lån den " + loan.LoanDate + " til følgende:</h2>";
+            body += "<h2>Dit lån fra den " + loan.LoanDate + "</h2>";
+            return body;
+        }
+
+        private string AddEditedLoanEmailHeaderPart2(Loan loan, string body)
+        {
+            var now = DateTime.Now;
+            var newLoanDate = now.ToString("d", new CultureInfo("da-DK"));
+            body += "<h2>er ændret den " + newLoanDate + " til følgende:</h2>";
             return body;
         }
 
@@ -448,7 +459,7 @@ namespace Syddjurs_Item_API.Controllers
 
             await _emailService.SendEmailAsync(
                 toEmail: SendTo,
-                subject: "Nyt lån",
+                subject: "Vedrørende tøjlån",
                  body);
         }
 
