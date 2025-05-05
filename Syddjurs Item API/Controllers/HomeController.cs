@@ -23,13 +23,15 @@ namespace Syddjurs_Item_API.Controllers
         private readonly AppDbContext _context;
         private readonly IUserContext _userContext;
         private readonly IEmailService _emailService;
+        private UserManager<ApplicationUser> _userManager;
 
 
-        public HomeController(AppDbContext context, IEmailService emailService, IUserContext userContext)
+        public HomeController(AppDbContext context, IEmailService emailService, IUserContext userContext, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _emailService = emailService;
             _userContext = userContext;
+            _userManager = userManager;
         }
 
 
@@ -91,10 +93,12 @@ namespace Syddjurs_Item_API.Controllers
             return Ok(returnList);
         }
 
-
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
         [HttpGet("loansforlist")]
         public async Task<IActionResult> GetLoanForList(string userName)
-        {
+        {                    
+            var currentUserRoles = await _userManager.GetRolesAsync(_userContext.CurrentUser);
+
             var loanList = _context.Loans.ToList();
 
             var returnList = new List<LoanDto>();
@@ -102,17 +106,17 @@ namespace Syddjurs_Item_API.Controllers
             LoanDto dto = null;
             foreach (var item in loanList)
             {
-                if (item.Lender == userName)
+                if (item.Lender == userName || currentUserRoles.Contains("Administrator") || currentUserRoles.Contains("Manager"))
                 {
                     dto = new LoanDto();
                     dto.Id = item.Id;
                     dto.Lender = item.Lender;
                     dto.LoanDate = item.LoanDate;
                     returnList.Add(dto);
-                }
-
+                }               
             }
 
+            returnList = returnList.OrderBy(l => l.Lender).ToList();
             return Ok(returnList);
         }
 
@@ -208,12 +212,12 @@ namespace Syddjurs_Item_API.Controllers
             return Ok();
         }
 
-        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+       
         [HttpPost("uploadloan")]
         public async Task<IActionResult> UploadLoan([FromBody] LoanDto loanDto)
         {
-            var userEmail = _userContext.Email;
             string emailBody = string.Empty;
+            var userEmail = _userContext.CurrentUser.Email;
 
             if (loanDto.Id == 0)
             {
@@ -420,7 +424,7 @@ namespace Syddjurs_Item_API.Controllers
 
         private async Task SendNewLoanEmail(String SendTo, Loan loan)
         {
-            var body = "<h2>Hej " + _userContext.UserName + "</h2>";
+            var body = "<h2>Hej " + _userContext.CurrentUser.UserName + "</h2>";
             body += "<h2>Du har den " + loan.LoanDate + " lånt følgende:</h2>";
 
             body += AddLoanInfo(loan, body);
@@ -435,7 +439,7 @@ namespace Syddjurs_Item_API.Controllers
 
         private string AddNewLoanEmailHeader(Loan loan, string body)
         {
-            body = "<h2>Hej " + _userContext.UserName + "</h2>";
+            body = "<h2>Hej " + _userContext.CurrentUser.UserName + "</h2>";
             body += "<h2>Du har den " + loan.LoanDate + " lånt følgende:</h2>";
             return body;
         }
