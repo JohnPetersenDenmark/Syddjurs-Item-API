@@ -395,6 +395,49 @@ namespace Syddjurs_Item_API.Controllers
             return item;
         }
 
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+        [HttpGet("usersforlist")]
+        public async Task<IActionResult> GetUsersForList()
+        {
+            if (_userContext.CurrentUser == null)
+            {
+                return BadRequest();
+            }
+            else
+            {
+                var currentUserRoles = await _userManager.GetRolesAsync(_userContext.CurrentUser);
+                if (!currentUserRoles.Contains("Administrator"))
+                {
+                    return BadRequest();
+                }
+            }
+
+
+            var userList = _userManager.Users.ToList();
+
+            var returnList = new List<UserDto>();
+
+            foreach (var user in userList)
+            {
+                var dto = new UserDto();
+                dto.Id = user.Id;
+                dto.UserName = user.UserName;
+                dto.Email = user.Email;
+
+                var currentUserRoles = await _userManager.GetRolesAsync(user);
+                foreach (var currentUserRole in currentUserRoles)
+                {
+                    var roleDto = new RoleDto();
+                    roleDto.RoleName = currentUserRole;
+                  dto.Roles.Add(roleDto);                  
+                }
+
+                returnList.Add(dto);
+            }
+
+            return Ok(returnList);
+        }
+
         private Item CopyItemToItemDto(ItemFullDto itemDto, Item item)
         {
 
