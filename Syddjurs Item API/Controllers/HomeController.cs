@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.IdentityModel.Tokens;
 using Syddjurs.Models;
 using Syddjurs.Models;
@@ -533,6 +534,52 @@ namespace Syddjurs_Item_API.Controllers
             }
                 
            return Ok();
+        }
+
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+        [HttpPost("uploadrole")]
+        public async Task<IActionResult> UploadRole([FromBody] RoleDto roleDto)
+        {
+
+            if (_userContext.CurrentUser == null)
+            {
+                return BadRequest();
+            }
+            else
+            {
+                var currentUserRoles = await _userManager.GetRolesAsync(_userContext.CurrentUser);
+                if (!currentUserRoles.Contains("Administrator"))
+                {
+                    return BadRequest();
+                }
+            }
+
+            if (String.IsNullOrWhiteSpace(roleDto.Id))
+            {
+                if (!await _roleManager.RoleExistsAsync(roleDto.RoleName))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole(roleDto.RoleName));
+                    return Ok();
+                }
+
+                return BadRequest("Rollen eksisterer allerede");
+            }
+
+            if (await _roleManager.RoleExistsAsync(roleDto.RoleName))
+            {
+                return BadRequest("Rollenavnet eksisterer allerede");
+            }
+
+            var role = await _roleManager.FindByIdAsync(roleDto.Id);
+            if (role != null)
+            {
+                //role.Name = roleDto.RoleName;
+                await _roleManager.SetRoleNameAsync(role, roleDto.RoleName);
+            }
+
+        
+
+            return Ok();
         }
 
         private Item CopyItemToItemDto(ItemFullDto itemDto, Item item)
