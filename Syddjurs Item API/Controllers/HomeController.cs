@@ -412,11 +412,10 @@ namespace Syddjurs_Item_API.Controllers
                     return BadRequest();
                 }
             }
-
-            var roles = _roleManager.Roles.Select(r => r.Name).ToList();
-
-            var userList = _userManager.Users.ToList();
-
+                   
+            var userList = await _userManager.Users.ToListAsync();
+                              
+                            
             var returnList = new List<UserDto>();
 
             foreach (var user in userList)
@@ -437,6 +436,7 @@ namespace Syddjurs_Item_API.Controllers
                         var roleDto = new RoleDto();
                         roleDto.RoleName = currentUserRoleName;
                         roleDto.Id = role.Id;
+                        roleDto.IsCheckBoxChecked = true;
                         dto.Roles.Add(roleDto);
                     }
                                
@@ -445,6 +445,7 @@ namespace Syddjurs_Item_API.Controllers
                 returnList.Add(dto);
             }
 
+            returnList.OrderBy(u => u.UserName).ToList();
             return Ok(returnList);
         }
 
@@ -472,7 +473,8 @@ namespace Syddjurs_Item_API.Controllers
                     .Select(role => new RoleDto
                         {
                             Id = role.Id,
-                            RoleName = role.Name
+                            RoleName = role.Name,
+                            IsCheckBoxChecked = false
                         })
                     .ToListAsync();
 
@@ -517,7 +519,10 @@ namespace Syddjurs_Item_API.Controllers
             var currentUserRoleNames = await _userManager.GetRolesAsync(user);
             foreach (var currentUserRoleName in currentUserRoleNames)
             {
-                await _userManager.RemoveFromRoleAsync(user, currentUserRoleName);              
+                if (! (currentUserRoleName == "Administrator"))
+                {
+                    await _userManager.RemoveFromRoleAsync(user, currentUserRoleName);
+                }
             }
 
             foreach (var dtoUserRole in userDto.Roles)

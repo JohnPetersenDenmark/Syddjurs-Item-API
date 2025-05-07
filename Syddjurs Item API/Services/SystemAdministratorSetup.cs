@@ -52,6 +52,15 @@ namespace Syddjurs_Item_API.Services
                     throw new Exception($"Failed to create admin user: {errors}");
                 }
             }
+            else
+            {
+                if (!await roleManager.RoleExistsAsync(adminRole))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(adminRole));
+                }
+
+                await userManager.AddToRoleAsync(adminUser, adminRole);
+            }
         }
     }
 }
