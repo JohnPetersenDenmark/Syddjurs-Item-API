@@ -11,12 +11,24 @@ namespace Syddjurs_Item_API.Services
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
             string adminRole = "Administrator";
+            string managerRole = "Manager";
+            string userRole = "User";
             string adminUsername = "Administrator";
             string adminPassword = "Admin123!"; // Use a secure password in production
 
             if (!await roleManager.RoleExistsAsync(adminRole))
             {
                 await roleManager.CreateAsync(new IdentityRole(adminRole));
+            }
+
+            if (!await roleManager.RoleExistsAsync(managerRole))
+            {
+                await roleManager.CreateAsync(new IdentityRole(managerRole));
+            }
+
+            if (!await roleManager.RoleExistsAsync(userRole))
+            {
+                await roleManager.CreateAsync(new IdentityRole(userRole));
             }
 
             var adminUser = await userManager.FindByNameAsync(adminUsername);

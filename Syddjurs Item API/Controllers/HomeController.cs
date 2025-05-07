@@ -9,6 +9,7 @@ using Syddjurs_Item_API.Data;
 using Syddjurs_Item_API.Interfaces;
 using Syddjurs_Item_API.Models;
 using Syddjurs_Item_API.Services;
+using System.Data;
 using System.Globalization;
 using System.Security.Claims;
 using System.Threading;
@@ -24,14 +25,16 @@ namespace Syddjurs_Item_API.Controllers
         private readonly IUserContext _userContext;
         private readonly IEmailService _emailService;
         private UserManager<ApplicationUser> _userManager;
+        private RoleManager<IdentityRole> _roleManager;
 
 
-        public HomeController(AppDbContext context, IEmailService emailService, IUserContext userContext, UserManager<ApplicationUser> userManager)
+        public HomeController(AppDbContext context, IEmailService emailService, IUserContext userContext, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _emailService = emailService;
             _userContext = userContext;
             _userManager = userManager;
+            _roleManager = roleManager; 
         }
 
 
@@ -40,8 +43,6 @@ namespace Syddjurs_Item_API.Controllers
 
         public async Task<IActionResult> UploadItem([FromBody] ItemFullDto itemDto)
         {
-
-
 
             if (itemDto == null)
                 return BadRequest("No item data received.");
@@ -412,6 +413,7 @@ namespace Syddjurs_Item_API.Controllers
                 }
             }
 
+            var roles = _roleManager.Roles.Select(r => r.Name).ToList();
 
             var userList = _userManager.Users.ToList();
 
@@ -424,18 +426,108 @@ namespace Syddjurs_Item_API.Controllers
                 dto.UserName = user.UserName;
                 dto.Email = user.Email;
 
-                var currentUserRoles = await _userManager.GetRolesAsync(user);
-                foreach (var currentUserRole in currentUserRoles)
+               
+
+                var currentUserRoleNames = await _userManager.GetRolesAsync(user);
+                foreach (var currentUserRoleName in currentUserRoleNames)
                 {
-                    var roleDto = new RoleDto();
-                    roleDto.RoleName = currentUserRole;
-                  dto.Roles.Add(roleDto);                  
+                    if ( currentUserRoleName != "Administrator")
+                    {
+                        var role = await _roleManager.FindByNameAsync(currentUserRoleName);
+                        var roleDto = new RoleDto();
+                        roleDto.RoleName = currentUserRoleName;
+                        roleDto.Id = role.Id;
+                        dto.Roles.Add(roleDto);
+                    }
+                               
                 }
 
                 returnList.Add(dto);
             }
 
             return Ok(returnList);
+        }
+
+
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+        [HttpGet("allroles")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            if (_userContext.CurrentUser == null)
+            {
+                return BadRequest();
+            }
+            else
+            {
+                var currentUserRoles = await _userManager.GetRolesAsync(_userContext.CurrentUser);
+                if (!currentUserRoles.Contains("Administrator"))
+                {
+                    return BadRequest();
+                }
+            }
+
+           
+
+            var roles = await _roleManager.Roles
+                    .Select(role => new RoleDto
+                        {
+                            Id = role.Id,
+                            RoleName = role.Name
+                        })
+                    .ToListAsync();
+
+            var roleToRemove = roles.FirstOrDefault(role => role.RoleName == "Administrator");
+
+            roles.Remove(roleToRemove);
+
+            return Ok(roles);
+        }
+
+
+
+        [ServiceFilter(typeof(ResolveUserClaimsFilter))]
+        [HttpPost("uploaduser")]
+        public async Task<IActionResult> UploadUser([FromBody] UserDto userDto)
+        {
+
+            if (_userContext.CurrentUser == null)
+            {
+                return BadRequest();
+            }
+            else
+            {
+                var currentUserRoles = await _userManager.GetRolesAsync(_userContext.CurrentUser);
+                if (!currentUserRoles.Contains("Administrator"))
+                {
+                    return BadRequest();
+                }
+            }
+
+            if ( String.IsNullOrWhiteSpace(userDto.Id))
+            {
+                return BadRequest();
+            }
+
+            var user = await _userManager.FindByIdAsync(userDto.Id);
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var currentUserRoleNames = await _userManager.GetRolesAsync(user);
+            foreach (var currentUserRoleName in currentUserRoleNames)
+            {
+                await _userManager.RemoveFromRoleAsync(user, currentUserRoleName);              
+            }
+
+            foreach (var dtoUserRole in userDto.Roles)
+            {
+                if (dtoUserRole.IsCheckBoxChecked) {
+                    await _userManager.AddToRoleAsync(user, dtoUserRole.RoleName);
+                }               
+            }
+                
+           return Ok();
         }
 
         private Item CopyItemToItemDto(ItemFullDto itemDto, Item item)

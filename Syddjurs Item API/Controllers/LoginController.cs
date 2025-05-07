@@ -37,9 +37,9 @@ namespace Syddjurs_Item_API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto )
         {
             var user = await _userManager.FindByNameAsync(loginDto.Username);
-                        // await _userManager.FindByEmailAsync(loginDto.Username);
+            // await _userManager.FindByEmailAsync(loginDto.Username);
 
-           
+          
 
             if (user == null)
             {
