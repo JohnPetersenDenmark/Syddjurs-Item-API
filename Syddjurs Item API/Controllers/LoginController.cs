@@ -120,7 +120,7 @@ namespace Syddjurs_Item_API.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1),
+                expires: DateTime.Now.AddHours(8),
                 signingCredentials: creds
             );
 
